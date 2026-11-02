@@ -1,18 +1,39 @@
 #include <Arduino.h>
+constexpr uint8_t CNTRL_PIN = 6;
+constexpr uint8_t READ_PIN = 18;
 
-// put function declarations here:
-int myFunction(int, int);
+uint32_t lastStateChange = 0;
+
+class Relay{
+  private:
+    bool isOn = 0;
+  public:
+    bool getState(){
+      return isOn;
+    }
+    void changeState(){
+      isOn = !isOn;
+    }
+};
+
+Relay relay;
+
 
 void setup() {
-  // put your setup code here, to run once:
-  int result = myFunction(2, 3);
+  Serial.begin(115200);
+  delay(100);
+  pinMode(CNTRL_PIN, OUTPUT);
+  pinMode(READ_PIN, INPUT_PULLDOWN);
+  lastStateChange = millis();
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
+  if (millis() - lastStateChange > 1000)
+  {
+    relay.changeState();
+    lastStateChange = millis();
+  }
+  digitalWrite(CNTRL_PIN, relay.getState());
+
 }
 
-// put function definitions here:
-int myFunction(int x, int y) {
-  return x + y;
-}
