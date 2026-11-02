@@ -7,6 +7,10 @@ volatile uint64_t lastStateChange = 0;
 volatile uint32_t switchingDelay = 0;
 volatile uint32_t lastInterruptTime = 0;
 
+volatile uint16_t interruptionsCounter = 0;
+
+uint32_t switchingDelaySum = 0;
+
 
 class Relay{
   private:
@@ -26,7 +30,9 @@ void IRAM_ATTR relay_isr(){
   if (micros()-lastInterruptTime > DEBOUNCE_TIME)
   {
     switchingDelay = micros() - lastStateChange;
+    switchingDelaySum += switchingDelay;
     lastInterruptTime = micros();
+    interruptionsCounter++;
   }
   
 }
@@ -42,14 +48,27 @@ void setup() {
 }
 
 void loop() {
+  static uint32_t lastPrintTime = 0;
+
   if (micros() - lastStateChange > 1000000)
   { lastStateChange = micros();
     relay.changeState();
-    Serial.println(switchingDelay);
   }
   digitalWrite(CNTRL_PIN, relay.getState());
 
   
+  if (millis() - lastPrintTime >= 1000) {
+    lastPrintTime = millis();
 
+    if (interruptionsCounter > 0) {
+      Serial.print("State changes:");
+      Serial.println(interruptionsCounter);
+      Serial.print("Avarage switching time:");
+      Serial.print(switchingDelaySum/interruptionsCounter);
+      Serial.println("mc");
+      Serial.println();
+    }
+  }
+ 
 }
 
